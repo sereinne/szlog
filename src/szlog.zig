@@ -173,6 +173,41 @@ pub const Logger = struct {
         }
     }
 
+    // Helper function to turn a tuple into a formatted JSON string.
+    pub fn convertTupleToJSONString(args: anytype) []const u8 {
+        // result contains only a JSON key value pair from args
+        // it does not contains the final result.
+        comptime var result: []const u8 = "";
+        inline for (args, 0..) |key, idx| {
+            if (!isStringType(key)) {
+                std.debug.panic("PANIC: key {any} is not a string!\n", .{key});
+                break;
+            }
+
+            // the end of the argument.
+            if (idx == args.len - 1) {
+                if (args.len % 2 != 0) {
+                    result = result ++ std.fmt.comptimePrint("\"{s}\": null", .{key});
+                    break;
+                }
+                break;
+            }
+
+            const value = args[idx + 1];
+
+            if (idx % 2 == 0 and idx == args.len - 2) {
+                result = result ++ std.fmt.comptimePrint("\"{s}\": {s}", .{ key, value });
+                break;
+            }
+
+            // the index of each key is even, meanwhile the index of each value is odd.
+            if (idx % 2 == 0) {
+                result = result ++ std.fmt.comptimePrint("\"{s}\": {s}, ", .{ key, value });
+            }
+        }
+        return result;
+    }
+
     // TODO: implement how to print log messages using JSON format
     // Wrapper function to print (by JSON format) to each possible output in order to reduce duplication.
     // for now it will do the same as `printTextToOutput`.
@@ -184,19 +219,19 @@ pub const Logger = struct {
             .Stdout => {
                 const stdout = std.io.getStdOut();
                 const stdout_writer = stdout.writer();
-                const args_string = convertTupleToString(args);
-                stdout_writer.print("{s} {s}", .{ msg, args_string }) catch |err| handleErr(err);
+                const args_string = convertTupleToJSONString(args);
+                stdout_writer.print("{{ \"message\": \"{s}\", {s} }}", .{ msg, args_string }) catch |err| handleErr(err);
             },
             .Stderr => {
                 const stderr = std.io.getStdErr();
                 const stderr_writer = stderr.writer();
-                const args_string = convertTupleToString(args);
-                stderr_writer.print("{s} {s}", .{ msg, args_string }) catch |err| handleErr(err);
+                const args_string = convertTupleToJSONString(args);
+                stderr_writer.print("{{ \"message\": \"{s}\", {s} }}", .{ msg, args_string }) catch |err| handleErr(err);
             },
             .Logfile => |file| {
                 const writer = file.writer();
-                const args_string = convertTupleToString(args);
-                writer.print("{s} {s}", .{ msg, args_string }) catch |err| handleErr(err);
+                const args_string = convertTupleToJSONString(args);
+                writer.print("{{ \"message\": \"{s}\", {s} }}", .{ msg, args_string }) catch |err| handleErr(err);
             },
         }
     }
