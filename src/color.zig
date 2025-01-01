@@ -59,6 +59,9 @@ pub const Colorizer = union(enum) {
             .extended => |opts| {
                 return Extended.colorizer(text, opts);
             },
+            .rgb => |opts| {
+                return Rgb.colorizer(text, opts);
+            },
         };
     }
 };

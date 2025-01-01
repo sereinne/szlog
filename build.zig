@@ -5,11 +5,10 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "making-api-blueprint",
-        // .name = "szlog-exe",
+        .name = "szlog-exe",
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("src/main.zig"),
+        .root_source_file = b.path("src/szlog.zig"),
     });
 
     const artifact = b.addRunArtifact(exe);
