@@ -1,3 +1,5 @@
+//! A simple structured logging library in Zig.
+
 const std = @import("std");
 const format = @import("format.zig");
 const utils = @import("utils.zig");
@@ -8,37 +10,33 @@ const TextFormatter = format.TextFormatter;
 const Colorizer = colors.Colorizer;
 const File = std.fs.File;
 
-// USAGE:
-// -- destination of log messages
-// type output = either stdout stderr logfile;
-// -- formatter can format and also color the messages.
-// type formatter = text json;
-// type logger = {
-//    output: output,
-//    formatter: formatter,
-// }
-//
-// pub fn main() void {
-//      const config = LoggerConfig = .{
-//          .output = output
-//          .formatter = formatter
-//      };
-//      var logger = Logger.default(); // or Logger.new(config);
-// }
+/// All types of possible output where all log messages go.
+pub const Output = union(enum) {
+    /// Logs into standard out.
+    stdout,
+    /// Logs into standard err.
+    stderr,
+    /// Logs into a file.
+    logfile: File,
+};
 
-pub const Output = union(enum) { stdout, stderr, logfile: File };
-
-pub const LoggerOptions = struct {
+/// Configuration options for `Szlog`.
+pub const SzlogOptions = struct {
+    /// Where the logs are going to go.
     output: Output,
+    /// How the logs are formatted.
     formatter: Formatter,
 };
 
-pub const Logger = struct {
+/// Structured Logger (can modify the behaviour by tweaking `SzlogOptions`).
+pub const Szlog = struct {
     const Self = @This();
-    opts: LoggerOptions,
+    /// Options (see `SzlogOptions`).
+    opts: SzlogOptions,
 
+    /// Initialize `Szlog` with default `SzlogOptions`.
     pub fn default() Self {
-        const opts = LoggerOptions{
+        const opts = SzlogOptions{
             .output = .stdout,
             .formatter = .{ .text = TextFormatter.default() },
         };
@@ -47,13 +45,15 @@ pub const Logger = struct {
         };
     }
 
-    pub fn new(opts: LoggerOptions) Self {
+    /// Initialize `Szlog` with user's configuration of `SzlogOptions`.
+    pub fn new(opts: SzlogOptions) Self {
         return Self{
             .opts = opts,
         };
     }
 
-    // no going to handle errors right now (it will just panic).
+    /// Logs message using structured logging.
+    /// TODO: handle error more gracefully.
     pub fn log(self: *Self, comptime message: []const u8, comptime color: ?Colorizer, args: anytype) void {
         switch (self.opts.output) {
             .stdout => {
@@ -74,9 +74,3 @@ pub const Logger = struct {
         }
     }
 };
-
-pub fn main() void {
-    const color = Colorizer{ .eightbit = .{ .mode = 1, .bg = 51, .fg = 31 } };
-    var l = Logger.new(.{ .output = .stdout, .formatter = .{ .text = format.TextFormatter.default() } });
-    l.log("Hello, World", color, .{ "foo", "args" });
-}

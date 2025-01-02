@@ -1,4 +1,5 @@
 const std = @import("std");
+// file that contains all hellper functions to handle common operations (e.g: error handling).
 
 // Helper function to handle errors with no message.
 pub fn handleErr(e: anyerror) noreturn {
